@@ -1,9 +1,8 @@
 from fastapi import Depends, HTTPException
 
-from repository.user_repository import UserRepository, get_user_repository
-from schemas.users import oauth2_scheme
-from services.auth_service import AuthService
-
+from app.repositories.user_repository import UserRepository, get_user_repository
+from app.schemas.users import oauth2_scheme
+from app.services.auth_service import AuthService
 
 
 class UserRightsService:
@@ -18,6 +17,7 @@ class UserRightsService:
 async def get_user_rights_service(repository: UserRepository = Depends(get_user_repository)) -> UserRightsService:
     return UserRightsService(repository)
 
-async def checking_admin(token = Depends(oauth2_scheme), user_rights_service: UserRightsService = Depends(get_user_rights_service)):
+async def checking_admin(token = Depends(oauth2_scheme), 
+                         user_rights_service: UserRightsService = Depends(get_user_rights_service)):
     decoded_jwt = await AuthService.decode_token(token)
     return await user_rights_service.is_user_admin(decoded_jwt.get("username"))

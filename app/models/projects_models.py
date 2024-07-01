@@ -1,10 +1,12 @@
-from sqlalchemy import Column, String, Integer
+import uuid
+
+from sqlalchemy import Column, String, Integer, DECIMAL
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.types import DateTime
 
-from models.users_models import Base
+from app.models.base import Base
 
-import uuid
+
 
 class Project(Base):
     __tablename__ = "projects"
@@ -14,9 +16,7 @@ class Project(Base):
     description = Column(String, nullable=True)
     start_at = Column(DateTime, nullable=False)
     end_at = Column(DateTime, nullable=False)
-    total_required_investmenet = Column(Integer, default=0)
-    remaining_required_investment = Column(Integer, default=0)
+    total_required_investmenet = Column(DECIMAL(10, 2), nullable=False)
+    remaining_required_investment = Column(DECIMAL(10, 2))
+    min_investment = Column(DECIMAL(10, 2), nullable=False)
     tags = Column(ARRAY(String))
-
-    class Config:
-        orm_mode = True

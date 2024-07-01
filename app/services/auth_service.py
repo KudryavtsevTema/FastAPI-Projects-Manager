@@ -1,12 +1,14 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import Depends, HTTPException
 import jwt
-from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
-from repository.user_repository import UserRepository, get_user_repository
-from schemas.token import Token
-from settings import settings
 import argon2
-from schemas.users import oauth2_scheme
+
+from app.schemas.users import oauth2_scheme
+from app.repositories.user_repository import UserRepository, get_user_repository
+from app.schemas.token import Token
+from app.settings import settings
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -42,12 +44,7 @@ class AuthService:
             return decoded_jwt
         except Exception as e:
             raise HTTPException(status_code=400, detail="Все хуйня, давай по-новой")
-        
-    async def validate_rights(self, decoded_token):
-        user_type = await self.user_repository.get_user_type_from_db(decoded_token.get("username"))
-        return user_type
-        
-        
+            
     async def verify_password(self, plain_password, hashed_password):
         return pwd_context.verify(plain_password, hashed_password)
     

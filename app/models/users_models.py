@@ -1,8 +1,15 @@
 import uuid
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+import enum
+
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from models.base import Base
+
+from app.models.base import Base
+
+class UserTypes(enum.Enum):
+    admin = 1
+    user = 0
 
 class User(Base):
     __tablename__ = "users"
@@ -13,12 +20,4 @@ class User(Base):
     email = Column(String, nullable=True)
     hashed_password = Column(String, nullable=True)
     disabled = Column(Boolean, nullable=True)
-    type_id = Column(Integer, ForeignKey("user_type.id"), default=1)
-    user_type = relationship("UserType", back_populates="users")
-
-class UserType(Base):
-    __tablename__ = "user_type"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
-    users = relationship("User", back_populates="user_type")
+    type_id = Column(Integer, nullable=False, default=UserTypes.user.value)

@@ -1,11 +1,10 @@
 from fastapi import Depends
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.session import get_db
-from models.users_models import User
+from app.db.session import get_db
+from app.models.users_models import User, UserTypes
 
 
 class UserRepository:
@@ -20,12 +19,12 @@ class UserRepository:
         return result.scalars().first()
     
     async def get_user_type_from_db(self, username):
-        query = select(User).where(User.username==username).options(selectinload(User.user_type))
+        query = select(User).where(User.username==username)
         result = await self.db.execute(query)
         user = result.scalars().first()
         if not user:
             return None
-        return user.user_type.name
+        return UserTypes(user.type_id).name
     
     async def create_user_to_db(self, new_user):
         self.db.add(new_user)

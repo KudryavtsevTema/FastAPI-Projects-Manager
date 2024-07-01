@@ -1,10 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from fastapi import HTTPException, Depends
 
-from models.projects_models import Project
-from db.session import get_db
+from app.models.projects_models import Project
+from app.db.session import get_db
 
 class ProjectsRepository:
 
@@ -13,9 +12,9 @@ class ProjectsRepository:
 
     async def get_from_db(self, id):
         project = await self.db.get(Project, id) 
-        if project is None:
-            raise HTTPException(status_code=404, detail="Project not found")
-        return project  
+        if not project:
+            return None
+        return project
 
 
     async def create_to_db(self, new_project: Project): 
@@ -39,11 +38,13 @@ class ProjectsRepository:
             for tag in tags:
                 query = query.filter(Project.tags.contains([tag]))
             
-
-
-
         result = await self.db.execute(query)
         return result.scalars().all()
     
+    async def set_remaining_investment(self, project_id, remaining_investment):
+        query=update(Project).where(Project.id==project_id).values(remaining_required_investment=remaining_investment)
+        await self.db.execute(query)
+        await self.db.commit()
+
 async def get_project_repository(db: AsyncSession = Depends(get_db)):
     return ProjectsRepository(db)

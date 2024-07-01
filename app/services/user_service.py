@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException
 
-from models.users_models import User
-from repository.user_repository import UserRepository, get_user_repository
-from schemas.users import UserInDB
-from services.auth_service import AuthService
+from app.models.users_models import User, UserTypes
+from app.repositories.user_repository import UserRepository, get_user_repository
+from app.schemas.users import UserInDB, UserResponse, UserSchema
+from app.services.auth_service import AuthService
 
 
 class UserService:
@@ -11,8 +11,13 @@ class UserService:
         self.repository = repository
 
     async def get_user_by_credentials(self, decoded_token):
-        return await self.repository.get_user_from_db(decoded_token.get("username"))
-
+        user =  await self.repository.get_user_from_db(decoded_token.get("username"))
+        return UserResponse(
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            type_id=UserTypes(user.type_id).name
+            )
 
     async def create_user(self, data: UserInDB):
         user = await self.repository.get_user_from_db(data.username)
@@ -28,7 +33,10 @@ class UserService:
             disabled=False
         )
         created_user = await self.repository.create_user_to_db(model)
-        return User(username=created_user.username, email=created_user.email, full_name=created_user.full_name)
+        return UserSchema(username=created_user.username, 
+                          email=created_user.email, 
+                          full_name=created_user.full_name
+                          )
         
         
 async def get_user_service(repository: UserRepository = Depends(get_user_repository)):
