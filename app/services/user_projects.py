@@ -3,12 +3,11 @@ from datetime import datetime
 
 from fastapi import HTTPException, Depends
 
-
 from app.models.users_projects import UserProjects
-from app.repositories.user_repository import UserRepository, get_user_repository
-from app.repositories.projects_repository import ProjectsRepository, get_project_repository
-from app.repositories.user_project_repository import UserProjectRepository, get_user_project_repository
-from app.schemas.user_projects import UserProject, UserProjectDB
+from app.repositories.user import UserRepository, get_user_repository
+from app.repositories.projects import ProjectsRepository, get_project_repository
+from app.repositories.user_projects import UserProjectRepository, get_user_project_repository
+from app.schemas.user_projects import BaseUserProject, UserProjectDB
 
 class UserProjectService:
     def __init__(self, 
@@ -19,20 +18,20 @@ class UserProjectService:
         self.project_repository = project_repository
         self.user_project_repository = user_project_repository
 
-    async def join_project(self, decoded_jwt, data: UserProject):
+    async def join_project(self, decoded_jwt, data: BaseUserProject):
         username = decoded_jwt.get('username')
-        user = await self.user_repository.get_user_from_db(username)
+        user = await self.user_repository.get_common(username)
         if not user:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"User {username} not exists")
-        project = await self.project_repository.get_from_db(data.project_id)
+        project = await self.project_repository.get_full(data.project_id)
         if not project:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Project {data.project_id} not found")
-        if data.investment_sum > project.remaining_required_investment:
+        if data.investment_sum > project.details.remaining_required_investment:
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST, 
                 detail=f"""
                     Investment sum {data.investment_sum} couldn't be greater than 
-                    requirements investment {project.remaining_required_investment}
+                    requirements investment {project.details.remaining_required_investment}
                 """)
         user_project = UserProjectDB(
             project_id=project.id,
@@ -43,7 +42,7 @@ class UserProjectService:
         await self.user_project_repository.create_user_project(user_project_model)
         await self.project_repository.set_remaining_investment(
             project.id,
-            project.remaining_required_investment-data.investment_sum)
+            project.details.remaining_required_investment-data.investment_sum)
         return user_project
 
 async def get_user_project_service(

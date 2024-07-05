@@ -5,8 +5,6 @@ from sqlalchemy import DECIMAL, Column, UUID, ForeignKey, DateTime, Float
 from app.models.base import Base
 
 
-
-
 class UserProjects(Base):
     __tablename__ = "user_projects"
 

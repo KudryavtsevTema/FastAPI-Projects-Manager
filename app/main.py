@@ -1,16 +1,15 @@
 from fastapi import APIRouter, FastAPI
 import uvicorn
 
-from app.routers.project_router import main_project_router
-from app.routers.user_router import secure_router
-
+from app.routers.projects import main_project_router
+from app.routers.users import secure_router
 
 
 app = FastAPI()
 
 main_api_router = APIRouter()   
 main_api_router.include_router(main_project_router, prefix="/projects", tags=["projects"])
-main_api_router.include_router(secure_router, prefix="/auth", tags=["secure"])
+main_api_router.include_router(secure_router, prefix="/user", tags=["user"])
 
 app.include_router(main_api_router)
 

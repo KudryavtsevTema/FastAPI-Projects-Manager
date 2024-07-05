@@ -1,18 +1,20 @@
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/token")
 
-class UserSchema(BaseModel):
+class BaseUser(BaseModel):
     username: str
     email: str | None = None
     full_name: str | None = None
 
-class UserInDB(UserSchema):
+class DetailedUser(BaseUser):
+    full_name: str
+    email: str
     password: str
 
-class UserResponse(BaseModel):
+class UserResponse(BaseUser):
     username: str
-    email: str
-    full_name: str
+    email: str | None = None
+    full_name: str | None = None
     type_id: str

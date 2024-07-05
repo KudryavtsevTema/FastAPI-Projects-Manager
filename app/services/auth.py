@@ -6,8 +6,8 @@ from passlib.context import CryptContext
 import argon2
 
 from app.schemas.users import oauth2_scheme
-from app.repositories.user_repository import UserRepository, get_user_repository
-from app.schemas.token import Token
+from app.repositories.user import UserRepository, get_user_repository
+from app.schemas.tokens import Token
 from app.settings import settings
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -22,15 +22,22 @@ class AuthService:
     
     @staticmethod
     async def decode_token(token):
-        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
+        decoded_token = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=settings.ALGORITHM
+            )
         return decoded_token
 
     async def check_credentials(self, form_data) -> Token:
-        user = await self.user_repository.get_user_from_db(form_data.username)
+        user = await self.user_repository.get_full(form_data.username)
         if not user:
-            raise HTTPException(status_code=404, detail="Пользователь с данным логином не существует")
+            raise HTTPException(
+                status_code=404,
+                detail="Пользователь с данным логином не существует"
+                )
         
-        if not await self.verify_password(form_data.password, user.hashed_password):
+        if not await self.verify_password(form_data.password, user.details.hashed_password):
             raise HTTPException(status_code=400, detail="Неверный пароль")
         
         return await self.create_access_token(data={"username": form_data.username})
@@ -38,7 +45,7 @@ class AuthService:
     async def validate_token(self, token):
         try:
             decoded_jwt = await self.decode_token(token)
-            user = await self.user_repository.get_user_from_db(decoded_jwt.get("username"))
+            user = await self.user_repository.get_common(decoded_jwt.get("username"))
             if not user:
                 raise Exception()
             return decoded_jwt
@@ -55,7 +62,10 @@ class AuthService:
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM)
         token = Token(access_token=encoded_jwt)
         return token
     
